@@ -4,6 +4,7 @@ namespace Mcamara\LaravelLocalization\Middleware;
 
 use Closure;
 use Illuminate\Support\Facades\View;
+use Illuminate\Http\Request;
 
 class LaravelLocalizationViewPath extends LaravelLocalizationMiddlewareBase 
 {

@@ -2,28 +2,11 @@
 
 namespace Mcamara\LaravelLocalization;
 
-use Illuminate\Config\Repository;
-use Illuminate\Foundation\Application;
 use Illuminate\Http\Request;
 use Locale;
 
 class LanguageNegotiator
 {
-
-    /**
-     * Config repository.
-     *
-     * @var \Illuminate\Config\Repository
-     */
-    protected $configRepository;
-
-    /**
-     * Illuminate request class.
-     *
-     * @var Illuminate\Foundation\Application
-     */
-    protected $app;
-
     /**
      * @var string
      */
@@ -40,42 +23,14 @@ class LanguageNegotiator
     private $request;
 
     /**
-     * @var bool
-     */
-    private $use_intl = false;
-
-    /**
      * @param string  $defaultLocale
      * @param array   $supportedLanguages
      * @param Request $request
      */
     public function __construct($defaultLocale, $supportedLanguages, Request $request)
     {
-        $this->app = app();
-
-        $this->configRepository = $this->app['config'];
-
         $this->defaultLocale = $defaultLocale;
-
-        if (class_exists('Locale')) {
-            $this->use_intl = true;
-
-            foreach ($supportedLanguages as $key => $supportedLanguage) {
-                if ( ! isset($supportedLanguage['lang'])) {
-                    $supportedLanguage['lang'] = Locale::canonicalize($key);
-                } else {
-                    $supportedLanguage['lang'] = Locale::canonicalize($supportedLanguage['lang']);
-                }
-                if (isset($supportedLanguage['regional'])) {
-                    $supportedLanguage['regional'] = Locale::canonicalize($supportedLanguage['regional']);
-                }
-
-                $this->supportedLanguages[$key] = $supportedLanguage;
-            }
-        } else {
-            $this->supportedLanguages = $supportedLanguages;
-        }
-
+        $this->supportedLanguages = $supportedLanguages;
         $this->request = $request;
     }
 
@@ -99,17 +54,10 @@ class LanguageNegotiator
     {
         $matches = $this->getMatchesFromAcceptedLanguages();
         foreach ($matches as $key => $q) {
-
-            $key = ($this->configRepository->get('laravellocalization.localesMapping')[$key]) ?? $key;
-
             if (!empty($this->supportedLanguages[$key])) {
                 return $key;
             }
-
-            if ($this->use_intl) {
-                $key = Locale::canonicalize($key);
-            }
-
+                    
             // Search for acceptable locale by 'regional' => 'af_ZA' or 'lang' => 'af-ZA' match.
             foreach ( $this->supportedLanguages as $key_supported => $locale ) {
                 if ( (isset($locale['regional']) && $locale['regional'] == $key) || (isset($locale['lang']) && $locale['lang'] == $key) ) {
@@ -124,7 +72,7 @@ class LanguageNegotiator
             return key($this->supportedLanguages);
         }
 
-        if ($this->use_intl && !empty($_SERVER['HTTP_ACCEPT_LANGUAGE'])) {
+        if (class_exists('Locale') && !empty($_SERVER['HTTP_ACCEPT_LANGUAGE'])) {
             $http_accept_language = Locale::acceptFromHttp($_SERVER['HTTP_ACCEPT_LANGUAGE']);
 
             if (!empty($this->supportedLanguages[$http_accept_language])) {
@@ -173,7 +121,7 @@ class LanguageNegotiator
                 }
                 // Unweighted values, get high weight by their position in the
                 // list
-                $q = $q ?? 1000 - \count($matches);
+                $q = isset($q) ? $q : 1000 - count($matches);
                 $matches[$l] = $q;
 
                 //If for some reason the Accept-Language header only sends language with country

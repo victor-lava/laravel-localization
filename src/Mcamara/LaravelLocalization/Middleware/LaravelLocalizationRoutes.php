@@ -3,6 +3,7 @@
 namespace Mcamara\LaravelLocalization\Middleware;
 
 use Closure;
+use Illuminate\Http\Request;
 
 class LaravelLocalizationRoutes extends LaravelLocalizationMiddlewareBase
 {
